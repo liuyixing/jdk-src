@@ -113,7 +113,7 @@ import sun.misc.Unsafe;
  * <li> {@link #tryRelease}
  * <li> {@link #tryAcquireShared}
  * <li> {@link #tryReleaseShared}
- * <li> {@link #isHeldExclusively}
+     * <li> {@link #isHeldExclusively}
  *</ul>
  *
  * Each of these methods by default throws {@link
@@ -305,10 +305,13 @@ public abstract class AbstractQueuedSynchronizer
      * Hagersten) lock queue. CLH locks are normally used for
      * spinlocks.  We instead use them for blocking synchronizers, but
      * use the same basic tactic of holding some of the control
-     * information about a thread in the predecessor of its node.  A
-     * "status" field in each node keeps track of whether a thread
+     * information about a thread in the predecessor of its node.
+     *
+     * A "status" field in each node keeps track of whether a thread
      * should block.  A node is signalled when its predecessor
-     * releases.  Each node of the queue otherwise serves as a
+     * releases.///通过每个节点中的status字段跟踪判断一个线程是否需要阻塞。一个节点会在前驱节点释放锁时被通知。
+     *
+     * Each node of the queue otherwise serves as a
      * specific-notification-style monitor holding a single waiting
      * thread. The status field does NOT control whether threads are
      * granted locks etc though.  A thread may try to acquire if it is

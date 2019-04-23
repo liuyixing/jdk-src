@@ -45,9 +45,13 @@ import java.util.concurrent.atomic.*;
  * potentially releasing a blocking acquirer.
  * However, no actual permit objects are used; the {@code Semaphore} just
  * keeps a count of the number available and acts accordingly.
+ * ///一个计数信号量。 从概念上讲，一个信号量维护一组许可。每一次acquire如果有必要会阻塞，直到一个许可可用，然后获取它。每一次release会增加一个许可，可能会释放一个被阻塞的获取者。
  *
  * <p>Semaphores are often used to restrict the number of threads than can
- * access some (physical or logical) resource. For example, here is
+ * access some (physical or logical) resource.
+ * ///信号量通常用于限制可以访问资源的线程数。
+ *
+ * For example, here is
  * a class that uses a semaphore to control access to a pool of items:
  * <pre>
  * class Pool {
@@ -107,10 +111,10 @@ import java.util.concurrent.atomic.*;
  * pool itself.
  *
  * <p>A semaphore initialized to one, and which is used such that it
- * only has at most one permit available, can serve as a mutual
+ * only has at most one permit available, can serve as a mutual///只有一个许可的信号量可用作互斥排他锁
  * exclusion lock.  This is more commonly known as a <em>binary
  * semaphore</em>, because it only has two states: one permit
- * available, or zero permits available.  When used in this way, the
+ * available, or zero permits available.  When used in this way, the///这样用跟Lock的区别是，信号量没有所有者的概念，可以被其他线程释放
  * binary semaphore has the property (unlike many {@link Lock}
  * implementations), that the &quot;lock&quot; can be released by a
  * thread other than the owner (as semaphores have no notion of
@@ -136,7 +140,7 @@ import java.util.concurrent.atomic.*;
  * honor the fairness setting, but will take any permits that are
  * available.
  *
- * <p>Generally, semaphores used to control resource access should be
+ * <p>Generally, semaphores used to control resource access should be///通常来说，信号量用于控制资源访问应该被初始化为公平锁，以保证没有线程会饥饿。
  * initialized as fair, to ensure that no thread is starved out from
  * accessing a resource. When using semaphores for other kinds of
  * synchronization control, the throughput advantages of non-fair

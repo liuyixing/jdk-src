@@ -144,6 +144,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * The default concurrency level for this table, used when not
      * otherwise specified in a constructor.
+     * 默认的并行度
      */
     static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
@@ -152,6 +153,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * specified by either of the constructors with arguments.  MUST
      * be a power of two <= 1<<30 to ensure that entries are indexable
      * using ints.
+     *
      */
     static final int MAXIMUM_CAPACITY = 1 << 30;
 
@@ -165,6 +167,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * The maximum number of segments to allow; used to bound
      * constructor arguments. Must be power of two less than 1 << 24.
+     * 最大允许有65536个段
      */
     static final int MAX_SEGMENTS = 1 << 16; // slightly conservative
 
@@ -238,16 +241,19 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Mask value for indexing into segments. The upper bits of a
      * key's hash code are used to choose the segment.
+     * 用于索引段的掩码。key的hashcode的高位被用于选择一个段。
      */
     final int segmentMask;
 
     /**
      * Shift value for indexing within segments.
+     *
      */
     final int segmentShift;
 
     /**
      * The segments, each of which is a specialized hash table.
+     * 段，每一个都是一个特别的哈希表
      */
     final Segment<K,V>[] segments;
 
@@ -262,8 +268,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     static final class HashEntry<K,V> {
         final int hash;
         final K key;
-        volatile V value;
-        volatile HashEntry<K,V> next;
+        volatile V value;//volatile修饰
+        volatile HashEntry<K,V> next;//volatile修饰
 
         HashEntry(int hash, K key, V value, HashEntry<K,V> next) {
             this.hash = hash;
@@ -285,9 +291,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         static final long nextOffset;
         static {
             try {
-                UNSAFE = sun.misc.Unsafe.getUnsafe();
-                Class k = HashEntry.class;
-                nextOffset = UNSAFE.objectFieldOffset
+                UNSAFE = sun.misc.Unsafe.getUnsafe();//获取Unsafe类实例
+                Class k = HashEntry.class;//HashEntry的Class对象
+                nextOffset = UNSAFE.objectFieldOffset//HashEntry类next字段偏移量
                     (k.getDeclaredField("next"));
             } catch (Exception e) {
                 throw new Error(e);
@@ -346,6 +352,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * Segments are specialized versions of hash tables.  This
      * subclasses from ReentrantLock opportunistically, just to
      * simplify some locking and avoid separate construction.
+     * 段是特殊版本的哈希表。从ReentrantLock继承，感觉这个继承关系很别扭
      */
     static final class Segment<K,V> extends ReentrantLock implements Serializable {
         /*
@@ -972,6 +979,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
+     * 读不加锁，volatile read
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      *
@@ -1107,6 +1115,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Maps the specified key to the specified value in this table.
      * Neither the key nor the value can be null.
+     * key和value都不能为null
      *
      * <p> The value can be retrieved by calling the <tt>get</tt> method
      * with a key that is equal to the original key.
@@ -1123,7 +1132,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if (value == null)
             throw new NullPointerException();
         int hash = hash(key);
-        int j = (hash >>> segmentShift) & segmentMask;
+        int j = (hash >>> segmentShift) & segmentMask;//获取到段的编号
         if ((s = (Segment<K,V>)UNSAFE.getObject          // nonvolatile; recheck
              (segments, (j << SSHIFT) + SBASE)) == null) //  in ensureSegment
             s = ensureSegment(j);
@@ -1595,8 +1604,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class tc = HashEntry[].class;
             Class sc = Segment[].class;
-            TBASE = UNSAFE.arrayBaseOffset(tc);
-            SBASE = UNSAFE.arrayBaseOffset(sc);
+            TBASE = UNSAFE.arrayBaseOffset(tc);//HashEntry[]数组的第一个元素偏移量
+            SBASE = UNSAFE.arrayBaseOffset(sc);//Segment[]数组的第一个元素偏移量
             ts = UNSAFE.arrayIndexScale(tc);
             ss = UNSAFE.arrayIndexScale(sc);
             HASHSEED_OFFSET = UNSAFE.objectFieldOffset(

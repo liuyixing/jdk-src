@@ -41,9 +41,9 @@ import java.util.Date;
  * {@code Condition} factors out the {@code Object} monitor
  * methods ({@link Object#wait() wait}, {@link Object#notify notify}
  * and {@link Object#notifyAll notifyAll}) into distinct objects to
- * give the effect of having multiple wait-sets per object, by
+ * give the effect of having multiple wait-sets per object, by///每个对象可以有多个等待集
  * combining them with the use of arbitrary {@link Lock} implementations.
- * Where a {@code Lock} replaces the use of {@code synchronized} methods
+ * Where a {@code Lock} replaces the use of {@code synchronized} methods///用Lock替代synchronized，用Condition替代monitor
  * and statements, a {@code Condition} replaces the use of the Object
  * monitor methods.
  *
@@ -53,13 +53,13 @@ import java.util.Date;
  * thread that some state condition may now be true.  Because access
  * to this shared state information occurs in different threads, it
  * must be protected, so a lock of some form is associated with the
- * condition. The key property that waiting for a condition provides
+ * condition. The key property that waiting for a condition provides///跟Object.wait类似，会原子释放条件变量关联的锁，并挂起当前线程
  * is that it <em>atomically</em> releases the associated lock and
  * suspends the current thread, just like {@code Object.wait}.
  *
- * <p>A {@code Condition} instance is intrinsically bound to a lock.
+ * <p>A {@code Condition} instance is intrinsically bound to a lock.///一个条件实例本质上是跟一个锁绑定的。
  * To obtain a {@code Condition} instance for a particular {@link Lock}
- * instance use its {@link Lock#newCondition newCondition()} method.
+ * instance use its {@link Lock#newCondition newCondition()} method.///通过Lock#newCondition方法获取到条件实例
  *
  * <p>As an example, suppose we have a bounded buffer which supports
  * {@code put} and {@code take} methods.  If a
@@ -118,7 +118,7 @@ import java.util.Date;
  * <p>A {@code Condition} implementation can provide behavior and semantics
  * that is
  * different from that of the {@code Object} monitor methods, such as
- * guaranteed ordering for notifications, or not requiring a lock to be held
+ * guaranteed ordering for notifications, or not requiring a lock to be held///保证通知的顺序性，执行通知时不要求持有锁
  * when performing notifications.
  * If an implementation provides such specialized semantics then the
  * implementation must document those semantics.
@@ -139,10 +139,10 @@ import java.util.Date;
  *
  * <h3>Implementation Considerations</h3>
  *
- * <p>When waiting upon a {@code Condition}, a &quot;<em>spurious
+ * <p>When waiting upon a {@code Condition}, a &quot;<em>spurious ///虚假的唤醒，伪唤醒
  * wakeup</em>&quot; is permitted to occur, in
  * general, as a concession to the underlying platform semantics.
- * This has little practical impact on most application programs as a
+ * This has little practical impact on most application programs as a///这对大多数应用程序几乎没有实际影响，因为应始终在循环中等待，测试正在等待的状态谓词。
  * {@code Condition} should always be waited upon in a loop, testing
  * the state predicate that is being waited for.  An implementation is
  * free to remove the possibility of spurious wakeups but it is
