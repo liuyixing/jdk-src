@@ -645,15 +645,16 @@ public abstract class AbstractQueuedSynchronizer
          * fails or if status is changed by waiting thread.
          */
         int ws = node.waitStatus;
-        if (ws < 0)
+        if (ws < 0)///清空当前节点的waitStatus
             compareAndSetWaitStatus(node, ws, 0);
 
         /*
          * Thread to unpark is held in successor, which is normally
          * just the next node.  But if cancelled or apparently null,
-         * traverse backwards from tail to find the actual
+         * traverse backwards from tail to find the actual///unpark后继节点，如果后继节点cancelled或者null，从tail往回查找实际non-cancelled的后继节点
          * non-cancelled successor.
          */
+        ///为什么cancelled的节点不能直接出队列的？还要留在队列里面吗？
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
@@ -661,11 +662,12 @@ public abstract class AbstractQueuedSynchronizer
                 if (t.waitStatus <= 0)
                     s = t;
         }
-        if (s != null)
+        if (s != null)///找到后继节点了，unpark对应的线程
             LockSupport.unpark(s.thread);
     }
 
     /**
+     * 共享模式的释放动作 -- 通知后继节点并且确保传播。
      * Release action for shared mode -- signal successor and ensure
      * propagation. (Note: For exclusive mode, release just amounts
      * to calling unparkSuccessor of head if it needs signal.)
@@ -687,9 +689,9 @@ public abstract class AbstractQueuedSynchronizer
             if (h != null && h != tail) {
                 int ws = h.waitStatus;
                 if (ws == Node.SIGNAL) {
-                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))///清空节点waitStatus
                         continue;            // loop to recheck cases
-                    unparkSuccessor(h);
+                    unparkSuccessor(h);///unpark后继节点
                 }
                 else if (ws == 0 &&
                          !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
@@ -736,11 +738,12 @@ public abstract class AbstractQueuedSynchronizer
     // Utilities for various versions of acquire
 
     /**
+     * 取消正在进行的acquire尝试
      * Cancels an ongoing attempt to acquire.
      *
      * @param node the node
      */
-    private void cancelAcquire(Node node) {
+    private void cancelAcquire(Node node) {///核心是当前节点出队，设置前驱节点的后继节点
         // Ignore if node doesn't exist
         if (node == null)
             return;
@@ -763,7 +766,7 @@ public abstract class AbstractQueuedSynchronizer
         node.waitStatus = Node.CANCELLED;
 
         // If we are the tail, remove ourselves.
-        if (node == tail && compareAndSetTail(node, pred)) {
+        if (node == tail && compareAndSetTail(node, pred)) {//如果是尾节点，直接出队
             compareAndSetNext(pred, predNext, null);
         } else {
             // If successor needs signal, try to set pred's next-link
@@ -785,6 +788,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * 检查并更新acquire失败的节点的status。返回true如果线程应该阻塞。这个是在所有acquire循环中主要的信号控制。要求pred==node.prev
      * Checks and updates status for a node that failed to acquire.
      * Returns true if thread should block. This is the main signal
      * control in all acquire loops.  Requires that pred == node.prev
@@ -793,22 +797,22 @@ public abstract class AbstractQueuedSynchronizer
      * @param node the node
      * @return {@code true} if thread should block
      */
-    private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {
+    private static boolean shouldParkAfterFailedAcquire(Node pred, Node node) {///一定要将前驱的waitStatus设置成SIGNAL线程才能去休眠
         int ws = pred.waitStatus;
-        if (ws == Node.SIGNAL)
+        if (ws == Node.SIGNAL)///如果已经告诉前驱节点通知自己，那么自己可以休眠去了
             /*
              * This node has already set status asking a release
              * to signal it, so it can safely park.
              */
             return true;
-        if (ws > 0) {
+        if (ws > 0) {///前驱被取消。 跳过所有cancelled的前驱并指出重试，就是当前线程暂不休眠继续尝试获取锁
             /*
              * Predecessor was cancelled. Skip over predecessors and
              * indicate retry.
              */
             do {
                 node.prev = pred = pred.prev;
-            } while (pred.waitStatus > 0);
+            } while (pred.waitStatus > 0); ///这里如果并发呢？
             pred.next = node;
         } else {
             /*
@@ -848,6 +852,7 @@ public abstract class AbstractQueuedSynchronizer
      */
 
     /**
+     * 以入队的线程以排他不响应中断的模式获取锁。condition wait methods和acquire会使用该方法
      * Acquires in exclusive uninterruptible mode for thread already in
      * queue. Used by condition wait methods as well as acquire.
      *
@@ -861,13 +866,13 @@ public abstract class AbstractQueuedSynchronizer
             boolean interrupted = false;
             for (;;) {
                 final Node p = node.predecessor();
-                if (p == head && tryAcquire(arg)) {
+                if (p == head && tryAcquire(arg)) {///如果当前节点的前驱是头节点，尝试获取锁
                     setHead(node);
                     p.next = null; // help GC
                     failed = false;
                     return interrupted;
                 }
-                if (shouldParkAfterFailedAcquire(p, node) &&
+                if (shouldParkAfterFailedAcquire(p, node) &&///如果获取失败，判断是否应该park，若是，则park当前线程
                     parkAndCheckInterrupt())
                     interrupted = true;
             }
@@ -1049,10 +1054,12 @@ public abstract class AbstractQueuedSynchronizer
     // Main exported methods
 
     /**
+     * 尝试以排他模式获取锁。这个方法应该查询是否允许以排他模式获取state，若是则获取之。
      * Attempts to acquire in exclusive mode. This method should query
      * if the state of the object permits it to be acquired in the
      * exclusive mode, and if so to acquire it.
      *
+     * 执行获取的线程始终调用此方法。如果这个方法返回失败，并且线程尚未入等待队列，acquire方法可能会将线程入队，直到被其他线程release通知。
      * <p>This method is always invoked by the thread performing
      * acquire.  If this method reports failure, the acquire method
      * may queue the thread, if it is not already queued, until it is
@@ -1185,6 +1192,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * 排他模式获取锁，忽略中断。
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -1196,7 +1204,7 @@ public abstract class AbstractQueuedSynchronizer
      *        {@link #tryAcquire} but is otherwise uninterpreted and
      *        can represent anything you like.
      */
-    public final void acquire(int arg) {
+    public final void acquire(int arg) {///尝试获取锁，失败的话入队，入队继续尝试获取，实在获取不到告诉前驱节点释放锁的时候通知一下自己，然后自己就休眠去了
         if (!tryAcquire(arg) &&
             acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();
@@ -1365,6 +1373,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * 判断是否有任意线程曾经竞争获取过此同步器，即acquire方法是否曾经阻塞过。
      * Queries whether any threads have ever contended to acquire this
      * synchronizer; that is if an acquire method has ever blocked.
      *

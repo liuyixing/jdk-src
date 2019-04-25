@@ -37,9 +37,9 @@ package java.util.concurrent.locks;
 import java.util.concurrent.TimeUnit;
 
 /**
- * {@code Lock} implementations provide more extensive locking
+ * {@code Lock} implementations provide more extensive locking ///提供更多可扩展的锁操作
  * operations than can be obtained using {@code synchronized} methods
- * and statements.  They allow more flexible structuring, may have
+ * and statements.  They allow more flexible structuring, may have ///更灵活的结构，完全不同的属性，支持多个关联的Condition对象
  * quite different properties, and may support multiple associated
  * {@link Condition} objects.
  *
@@ -92,7 +92,7 @@ import java.util.concurrent.TimeUnit;
  * lock is released when necessary.
  *
  * <p>{@code Lock} implementations provide additional functionality
- * over the use of {@code synchronized} methods and statements by
+ * over the use of {@code synchronized} methods and statements by ///非阻塞的尝试获取锁操作tryLock，可中断的获取锁操作lockInterruptibly，可超时的获取锁操作tryLock
  * providing a non-blocking attempt to acquire a lock ({@link
  * #tryLock()}), an attempt to acquire the lock that can be
  * interrupted ({@link #lockInterruptibly}, and an attempt to acquire
@@ -100,7 +100,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>A {@code Lock} class can also provide behavior and semantics
  * that is quite different from that of the implicit monitor lock,
- * such as guaranteed ordering, non-reentrant usage, or deadlock
+ * such as guaranteed ordering, non-reentrant usage, or deadlock ///顺序保证，非可重入，死锁检测
  * detection. If an implementation provides such specialized semantics
  * then the implementation must document those semantics.
  *
